@@ -1,8 +1,9 @@
 return {
-  {
-    'VVoruganti/today.nvim',
-    config = function()
-      require('today').setup()
-    end
-  }
+    {
+        'VVoruganti/today.nvim',
+        cmd = "Today",
+        config = function()
+            require('today').setup()
+        end
+    }
 }

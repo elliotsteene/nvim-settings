@@ -1,29 +1,30 @@
 return {
-  { "github/copilot.vim" },
-  {
-    "olimorris/codecompanion.nvim",
-    dependencies = {
-      "nvim-lua/plenary.nvim",
-      "nvim-treesitter/nvim-treesitter",
-    },
-    config = function()
-      require("codecompanion").setup {
-        strategies = {
-          chat = {
-            adapter = "copilot"
-          },
-          inline = {
-            adapter = "copilot"
-          },
+    { "github/copilot.vim", event = "InsertEnter", },
+    {
+        "olimorris/codecompanion.nvim",
+        cmd = "CodeCompanionChat",
+        dependencies = {
+            "nvim-lua/plenary.nvim",
+            "nvim-treesitter/nvim-treesitter",
         },
-        display = {
-          chat = {
-            window = {
-              position = "right",
+        config = function()
+            require("codecompanion").setup {
+                strategies = {
+                    chat = {
+                        adapter = "copilot"
+                    },
+                    inline = {
+                        adapter = "copilot"
+                    },
+                },
+                display = {
+                    chat = {
+                        window = {
+                            position = "right",
+                        }
+                    }
+                }
             }
-          }
-        }
-      }
-    end
-  },
+        end
+    },
 }

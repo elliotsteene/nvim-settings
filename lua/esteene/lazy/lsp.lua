@@ -1,24 +1,25 @@
 return {
     "neovim/nvim-lspconfig",
+    event = { "BufReadPre", "BufNewFile" },
     dependencies = {
-        "stevearc/conform.nvim",
+        { "stevearc/conform.nvim",    event = "BufWritePre" },
         "williamboman/mason.nvim",
         "williamboman/mason-lspconfig.nvim",
         "hrsh7th/cmp-nvim-lsp",
-        "hrsh7th/cmp-buffer",
-        "hrsh7th/cmp-path",
-        "hrsh7th/cmp-cmdline",
-        "hrsh7th/nvim-cmp",
-        "L3MON4D3/LuaSnip",
-        "saadparwaiz1/cmp_luasnip",
-        "j-hui/fidget.nvim",
+        { "hrsh7th/cmp-buffer",       event = "InsertEnter" },
+        { "hrsh7th/cmp-path",         event = "InsertEnter" },
+        { "hrsh7th/cmp-cmdline",      event = "CmdlineEnter" },
+        { "hrsh7th/nvim-cmp",         event = "InsertEnter" },
+        { "L3MON4D3/LuaSnip",         event = "InsertEnter" },
+        { "saadparwaiz1/cmp_luasnip", event = "InsertEnter" },
+        { "j-hui/fidget.nvim",        event = "LspAttach" },
     },
     config = function()
         require("conform").setup({
             formatters_by_ft = {
                 lua = { "stylua" },
                 python = { "ruff_format", "ruff_fix" },
-                go = { "gofmt" },
+                go = { "goimports", "gofmt" },
                 json = { "prettier" },
             },
             format_on_save = {
@@ -123,6 +124,53 @@ return {
                             if vim.lsp.inlay_hint then
                                 vim.lsp.inlay_hint.enable(true, { bufnr = bufnr })
                             end
+                        end,
+                    }
+                end,
+                ["gopls"] = function()
+                    local lspconfig = require("lspconfig")
+                    lspconfig.gopls.setup {
+                        capabilities = capabilities,
+                        settings = {
+                            gopls = {
+                                analyses = {
+                                    unusedparams = true,
+                                },
+                                staticcheck = true,
+                                gofumpt = true,
+                                usePlaceholders = true,
+                                completeUnimported = true,
+                                experimentalPostfixCompletions = true,
+                            },
+                        },
+                        on_attach = function(client, bufnr)
+                            -- Add specific key mappings for Go if needed
+
+                            -- Create an autocmd that runs goimports on save
+                            vim.api.nvim_create_autocmd("BufWritePre", {
+                                pattern = "*.go",
+                                callback = function()
+                                    local params = vim.lsp.util.make_range_params()
+                                    params.context = { only = { "source.organizeImports" } }
+
+                                    -- Synchronously organize imports
+                                    local result = vim.lsp.buf_request_sync(bufnr, "textDocument/codeAction", params,
+                                        3000)
+                                    for _, res in pairs(result or {}) do
+                                        for _, r in pairs(res.result or {}) do
+                                            if r.edit then
+                                                vim.lsp.util.apply_workspace_edit(r.edit, "UTF-8")
+                                            else
+                                                vim.lsp.buf.execute_command(r.command)
+                                            end
+                                        end
+                                    end
+
+                                    -- Format the buffer
+                                    vim.lsp.buf.format({ async = false })
+                                end,
+                                group = vim.api.nvim_create_augroup("GoImportsFormat", { clear = true }),
+                            })
                         end,
                     }
                 end,
